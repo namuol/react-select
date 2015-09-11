@@ -4,7 +4,7 @@
 
 var React = require('react');
 var Input = require('react-input-autosize');
-var classes = require('classnames');
+var seamstress = require('react-seamstress');
 var Value = require('./Value');
 var SingleValue = require('./SingleValue');
 var Option = require('./Option');
@@ -685,19 +685,20 @@ var Select = React.createClass({
 			var op = options[key];
 			var isSelected = this.state.value === op.value;
 			var isFocused = focusedValue === op.value;
-			var optionClass = classes({
-				'Select-option': true,
-				'is-selected': isSelected,
-				'is-focused': isFocused,
-				'is-disabled': op.disabled
-			});
+
 			var ref = isFocused ? 'focused' : null;
 			var mouseEnter = this.focusOption.bind(this, op);
 			var mouseLeave = this.unfocusOption.bind(this, op);
 			var mouseDown = this.selectValue.bind(this, op);
+
 			var optionResult = React.createElement(this.props.optionComponent, {
 				key: 'option-' + op.value,
-				className: optionClass,
+				
+				styles: this.getStylesFor('option').concat(op.className, op.style),
+				selected: isSelected,
+				focused: isFocused,
+				disabled: op.disabled,
+
 				renderFunc: renderLabel,
 				mouseEnter: mouseEnter,
 				mouseLeave: mouseLeave,
@@ -739,16 +740,19 @@ var Select = React.createClass({
 		}
 	},
 
+	getStyleState: function getStyleState () {
+		return {
+			multi: this.props.multi,
+			searchable: this.props.searchable,
+			open: this.state.isOpen,
+			focused: this.state.isFocused,
+			loading: this.state.isLoading,
+			disabled: this.props.disabled,
+			'has-value': this.state.value != null,
+		};
+	},
+
 	render: function() {
-		var selectClass = classes('Select', this.props.className, {
-			'is-multi': this.props.multi,
-			'is-searchable': this.props.searchable,
-			'is-open': this.state.isOpen,
-			'is-focused': this.state.isFocused,
-			'is-loading': this.state.isLoading,
-			'is-disabled': this.props.disabled,
-			'has-value': this.state.value
-		});
 		var value = [];
 		if (this.props.multi) {
 			this.state.values.forEach(function(val) {
@@ -827,8 +831,10 @@ var Select = React.createClass({
 			input = <div className="Select-input">&nbsp;</div>;
 		}
 
+		var styleProps = this.getStyleProps();
+
 		return (
-			<div ref="wrapper" className={selectClass}>
+			<div ref="wrapper" className={styleProps.className} style={styleProps.style}>
 				<input type="hidden" ref="value" name={this.props.name} value={this.state.value} disabled={this.props.disabled} />
 				<div className="Select-control" ref="control" onKeyDown={this.handleKeyDown} onMouseDown={this.handleMouseDown} onTouchEnd={this.handleMouseDown}>
 					{value}
@@ -842,7 +848,17 @@ var Select = React.createClass({
 			</div>
 		);
 	}
-
 });
 
-module.exports = Select;
+Select.styles = {
+	':base': 'Select',
+	':multi': 'is-multi',
+	':searchable': 'is-searchable',
+	':open': 'is-open',
+	':focused': 'is-focused',
+	':loading': 'is-loading',
+	':disabled': 'is-disabled',
+	':has-value': 'has-value',
+};
+
+module.exports = seamstress(Select);
