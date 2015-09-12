@@ -28,7 +28,7 @@ var Value = React.createClass({
 		return {
 			option: this.props.option,
 			removable: !!this.props.onRemove,
-			clickable: this.props.optionLabelClick,
+			clickable: !!this.props.optionLabelClick,
 		};
 	},
 
@@ -72,8 +72,13 @@ var Value = React.createClass({
 			</div>
 		);
 	}
-
 });
+
+Value.styleStateTypes = {
+	option: React.PropTypes.object,
+	removable: React.PropTypes.bool,
+	clickable: React.PropTypes.bool,
+};
 
 Value.styles = {
 	':base': (state) => {

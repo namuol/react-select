@@ -22,9 +22,13 @@ var SingleValue = React.createClass({
 	}
 });
 
+SingleValue.styleStateTypes = {
+	value: React.PropTypes.object,
+};
+
 SingleValue.styles = [
 	'Select-placeholder',
-	
+
 	function(state) {
 		var value = state.value;
 		if (!!value) {

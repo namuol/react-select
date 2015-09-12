@@ -742,12 +742,12 @@ var Select = React.createClass({
 
 	getStyleState: function getStyleState () {
 		return {
-			multi: this.props.multi,
-			searchable: this.props.searchable,
-			open: this.state.isOpen,
-			focused: this.state.isFocused,
-			loading: this.state.isLoading,
-			disabled: this.props.disabled,
+			multi: !!this.props.multi,
+			searchable: !!this.props.searchable,
+			open: !!this.state.isOpen,
+			focused: !!this.state.isFocused,
+			loading: !!this.state.isLoading,
+			disabled: !!this.props.disabled,
 			'has-value': !!this.state.value,
 			'no-results': !this.state.isLoading && (this.state.inputValue || !this.props.asyncOptions),
 		};
@@ -848,6 +848,17 @@ var Select = React.createClass({
 		);
 	}
 });
+
+Select.styleStateTypes = {
+	multi: React.PropTypes.bool.isRequired,
+	searchable: React.PropTypes.bool.isRequired,
+	open: React.PropTypes.bool.isRequired,
+	focused: React.PropTypes.bool.isRequired,
+	loading: React.PropTypes.bool.isRequired,
+	disabled: React.PropTypes.bool.isRequired,
+	'has-value': React.PropTypes.bool.isRequired,
+	'no-results': React.PropTypes.bool.isRequired,
+};
 
 Select.styles = {
 	':base': 'Select',
