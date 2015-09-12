@@ -1,22 +1,43 @@
 var React = require('react');
-var classes = require('classnames');
+var seamstress = require('react-seamstress');
 
 var SingleValue = React.createClass({
 	propTypes: {
 		placeholder: React.PropTypes.string,       // this is default value provided by React-Select based component
 		value: React.PropTypes.object              // selected option
 	},
-	render: function() {
 
-		var classNames = classes('Select-placeholder', this.props.value && this.props.value.className);
+	getStyleState: function() {
+		return {
+			value: this.props.value,
+		};
+	},
+
+	render: function() {
+		var styleProps = this.getStyleProps();
 		return (
 			<div
-				className={classNames}
-				style={this.props.value && this.props.value.style}
+				className={styleProps.className}
+				style={styleProps.style}
 				title={this.props.value && this.props.value.title}
 				>{this.props.placeholder}</div>
 		);
 	}
 });
 
-module.exports = SingleValue;
+SingleValue.styles = [
+	'Select-placeholder',
+
+	function(state) {
+		var value = state.value;
+		if (!!value) {
+			return [
+				...(value.styles || []),
+				value.className,
+				value.style
+			];
+		}
+	},
+];
+
+module.exports = seamstress(SingleValue);

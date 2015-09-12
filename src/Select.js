@@ -694,7 +694,7 @@ var Select = React.createClass({
 			var optionResult = React.createElement(this.props.optionComponent, {
 				key: 'option-' + op.value,
 				
-				styles: this.getStylesFor('option').concat(op.className, op.style),
+				styles: this.getStylesFor('option').concat(op.styles || [], op.className, op.style),
 				selected: isSelected,
 				focused: isFocused,
 				disabled: op.disabled,

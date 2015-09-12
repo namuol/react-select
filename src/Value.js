@@ -1,5 +1,5 @@
 var React = require('react');
-var classes = require('classnames');
+var seamstress = require('react-seamstress');
 
 var Value = React.createClass({
 
@@ -24,17 +24,25 @@ var Value = React.createClass({
 		}
 	},
 
+	getStyleState: function() {
+		return {
+			option: this.props.option,
+			removable: !!this.props.onRemove,
+			clickable: this.props.optionLabelClick,
+		};
+	},
+
 	render: function() {
 		var label = this.props.option.label;
 		if (this.props.renderer) {
 			label = this.props.renderer(this.props.option);
 		}
+		
+		var styleProps = this.getStyleProps();
 
 		if(!this.props.onRemove && !this.props.optionLabelClick) {
 			return (
-				<div
-					className={classes('Select-value', this.props.option.className)}
-					style={this.props.option.style}
+				<div {...styleProps}
 					title={this.props.option.title}
 				>{label}</div>
 			);
@@ -43,11 +51,10 @@ var Value = React.createClass({
 		if (this.props.optionLabelClick) {
 
 			label = (
-				<a className={classes('Select-item-label__a', this.props.option.className)}
+				<a {...this.getStylePropsFor('label-anchor')}
 					onMouseDown={this.blockEvent}
 					onTouchEnd={this.props.onOptionLabelClick}
 					onClick={this.props.onOptionLabelClick}
-					style={this.props.option.style}
 					title={this.props.option.title}>
 					{label}
 				</a>
@@ -55,18 +62,38 @@ var Value = React.createClass({
 		}
 
 		return (
-			<div className={classes('Select-item', this.props.option.className)}
-				 style={this.props.option.style}
+			<div {...styleProps}
 				 title={this.props.option.title}>
-				<span className="Select-item-icon"
+				<span {...this.getStylePropsFor('icon')}
 					onMouseDown={this.blockEvent}
 					onClick={this.handleOnRemove}
 					onTouchEnd={this.handleOnRemove}>&times;</span>
-				<span className="Select-item-label">{label}</span>
+				<span {...this.getStylePropsFor('label')}>{label}</span>
 			</div>
 		);
 	}
 
 });
 
-module.exports = Value;
+var itemStyles = function(state) {
+	var option = state.option;
+	return [
+		'Select-item',
+		...(option.styles || []),
+		option.className,
+		option.style
+	];
+};
+
+Value.styles = {
+	':base': 'Select-value',
+
+	':removable': itemStyles,
+	':clickable': itemStyles,
+
+	'::icon': 'Select-item-icon',
+	'::label': 'Select-item-label',
+	'::label-anchor': 'Select-item-label__a'
+};
+
+module.exports = seamstress(Value);
