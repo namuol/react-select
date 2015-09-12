@@ -14,11 +14,8 @@ var SingleValue = React.createClass({
 	},
 
 	render: function() {
-		var styleProps = this.getStyleProps();
 		return (
-			<div
-				className={styleProps.className}
-				style={styleProps.style}
+			<div {...this.getStyleProps()}
 				title={this.props.value && this.props.value.title}
 				>{this.props.placeholder}</div>
 		);
@@ -27,7 +24,7 @@ var SingleValue = React.createClass({
 
 SingleValue.styles = [
 	'Select-placeholder',
-
+	
 	function(state) {
 		var value = state.value;
 		if (!!value) {

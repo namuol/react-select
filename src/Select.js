@@ -681,6 +681,9 @@ var Select = React.createClass({
 			};
 			options.unshift(newOption);
 		}
+
+		var styleState = this.getStyleState();
+
 		var ops = Object.keys(options).map(function(key) {
 			var op = options[key];
 			var isSelected = this.state.value === op.value;
@@ -714,21 +717,18 @@ var Select = React.createClass({
 		if (ops.length) {
 			return ops;
 		} else {
-			var noResultsText, promptClass;
+			var promptText;
 			if (this.state.isLoading) {
-				promptClass = 'Select-searching';
-				noResultsText = this.props.searchingText;
-			} else if (this.state.inputValue || !this.props.asyncOptions) {
-				promptClass = 'Select-noresults';
-				noResultsText = this.props.noResultsText;
+				promptText = this.props.searchingText;
+			} else if (styleState['no-results']) {
+				promptText = this.props.noResultsText;
 			} else {
-				promptClass = 'Select-search-prompt';
-				noResultsText = this.props.searchPromptText;
+				promptText = this.props.searchPromptText;
 			}
 
 			return (
-				<div className={promptClass}>
-					{noResultsText}
+				<div {...this.getStylePropsFor('prompt')}>
+					{promptText}
 				</div>
 			);
 		}
@@ -748,7 +748,8 @@ var Select = React.createClass({
 			focused: this.state.isFocused,
 			loading: this.state.isLoading,
 			disabled: this.props.disabled,
-			'has-value': this.state.value != null,
+			'has-value': !!this.state.value,
+			'no-results': !this.state.isLoading && (this.state.inputValue || !this.props.asyncOptions),
 		};
 	},
 
@@ -789,16 +790,16 @@ var Select = React.createClass({
 			}
 		}
 
-		var loading = this.state.isLoading ? <span className="Select-loading" aria-hidden="true" /> : null;
-		var clear = this.props.clearable && this.state.value && !this.props.disabled ? <span className="Select-clear" title={this.props.multi ? this.props.clearAllText : this.props.clearValueText} aria-label={this.props.multi ? this.props.clearAllText : this.props.clearValueText} onMouseDown={this.clearValue} onClick={this.clearValue} dangerouslySetInnerHTML={{ __html: '&times;' }} /> : null;
+		var loading = this.state.isLoading ? <span {...this.getStylePropsFor('loader')} aria-hidden="true" /> : null;
+		var clear = this.props.clearable && this.state.value && !this.props.disabled ? <span {...this.getStylePropsFor('clear')} title={this.props.multi ? this.props.clearAllText : this.props.clearValueText} aria-label={this.props.multi ? this.props.clearAllText : this.props.clearValueText} onMouseDown={this.clearValue} onClick={this.clearValue} dangerouslySetInnerHTML={{ __html: '&times;' }} /> : null;
 
 		var menu;
 		var menuProps;
 		if (this.state.isOpen) {
 			menuProps = {
 				ref: 'menu',
-				className: 'Select-menu',
-				onMouseDown: this.handleMouseDown
+				onMouseDown: this.handleMouseDown,
+				...this.getStylePropsFor('menu'),
 			};
 			menu = (
 				<div ref="selectMenuContainer" className="Select-menu-outer">
@@ -831,16 +832,14 @@ var Select = React.createClass({
 			input = <div className="Select-input">&nbsp;</div>;
 		}
 
-		var styleProps = this.getStyleProps();
-
 		return (
-			<div ref="wrapper" className={styleProps.className} style={styleProps.style}>
+			<div ref="wrapper" {...this.getStyleProps()}>
 				<input type="hidden" ref="value" name={this.props.name} value={this.state.value} disabled={this.props.disabled} />
-				<div className="Select-control" ref="control" onKeyDown={this.handleKeyDown} onMouseDown={this.handleMouseDown} onTouchEnd={this.handleMouseDown}>
+				<div {...this.getStylePropsFor('control')} ref="control" onKeyDown={this.handleKeyDown} onMouseDown={this.handleMouseDown} onTouchEnd={this.handleMouseDown}>
 					{value}
 					{input}
-					<span className="Select-arrow-zone" onMouseDown={this.handleMouseDownOnArrow} />
-					<span className="Select-arrow" onMouseDown={this.handleMouseDownOnArrow} />
+					<span {...this.getStylePropsFor('arrow-zone')} onMouseDown={this.handleMouseDownOnArrow} />
+					<span {...this.getStylePropsFor('arrow')} onMouseDown={this.handleMouseDownOnArrow} />
 					{loading}
 					{clear}
 				</div>
@@ -859,6 +858,19 @@ Select.styles = {
 	':loading': 'is-loading',
 	':disabled': 'is-disabled',
 	':has-value': 'has-value',
+
+	'::prompt': 'Select-search-prompt',
+	':loading::prompt': 'Select-searching',
+	':no-results::prompt': 'Select-noresults',
+
+	'::loader': 'Select-loading',
+	'::clear': 'Select-clear',
+	'::menu': 'Select-menu',
+
+	'::control': 'Select-control',
+
+	'::arrow': 'Select-arrow',
+	'::arrow-zone': 'Select-arrow-zone',
 };
 
 module.exports = seamstress(Select);

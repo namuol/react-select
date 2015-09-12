@@ -75,25 +75,38 @@ var Value = React.createClass({
 
 });
 
-var itemStyles = function(state) {
-	var option = state.option;
-	return [
-		'Select-item',
-		...(option.styles || []),
-		option.className,
-		option.style
-	];
-};
-
 Value.styles = {
-	':base': 'Select-value',
-
-	// Looks like seamstress will probably need
-	//   the equivalent to CSS's comma (logical OR).
-	// This could be expressed much more nicely with
-	//  ':removable, :clickable'
-	':removable': itemStyles,
-	':clickable': itemStyles,
+	':base': (state) => {
+		//
+		// Here's an interesting special case.
+		//
+		// There's no single unconditional base-class for this component
+		// as it is currently implemented, so I'm using some ugly if/else
+		// logic to achieve the result I want.
+		//
+		// I may want to expand seamstress to allow this kind
+		// of logical composition, so it instead might look like this:
+		// {
+		// 	'not(:clickable,:removable)': 'Select-value',
+		// 	':clickable,:removable': function...,
+		// }
+		//
+		// This would require two new features:
+		// - Logical OR (via `,`)
+		// - Logical NOT (via `not`)
+		//
+		if (!state.clickable && !state.removable) {
+			return 'Select-value';
+		} else {
+			var option = state.option;
+			return [
+				'Select-item',
+				option.className,
+				option.style,
+				...(option.styles || []),
+			];
+		}
+	},
 
 	'::icon': 'Select-item-icon',
 	'::label': 'Select-item-label',
