@@ -88,6 +88,10 @@ var itemStyles = function(state) {
 Value.styles = {
 	':base': 'Select-value',
 
+	// Looks like seamstress will probably need
+	//   the equivalent to CSS's comma (logical OR).
+	// This could be expressed much more nicely with
+	//  ':removable, :clickable'
 	':removable': itemStyles,
 	':clickable': itemStyles,
 
