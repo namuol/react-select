@@ -3,7 +3,7 @@
 'use strict';
 
 var React = (typeof window !== "undefined" ? window['React'] : typeof global !== "undefined" ? global['React'] : null);
-var classes = (typeof window !== "undefined" ? window['classNames'] : typeof global !== "undefined" ? global['classNames'] : null);
+var Seamstress = require('react-seamstress');
 
 var Option = React.createClass({
 	displayName: 'Option',
@@ -15,7 +15,12 @@ var Option = React.createClass({
 		mouseEnter: React.PropTypes.func, // method to handle mouseEnter on option element
 		mouseLeave: React.PropTypes.func, // method to handle mouseLeave on option element
 		option: React.PropTypes.object.isRequired, // object that is base for that option
-		renderFunc: React.PropTypes.func // method passed to ReactSelect component to render label text
+		renderFunc: React.PropTypes.func, // method passed to ReactSelect component to render label text
+
+		// Added for getStyleState:
+		focused: React.PropTypes.bool,
+		selected: React.PropTypes.bool,
+		disabled: React.PropTypes.bool
 	},
 
 	blockEvent: function blockEvent(event) {
@@ -34,18 +39,19 @@ var Option = React.createClass({
 	render: function render() {
 		var obj = this.props.option;
 		var renderedLabel = this.props.renderFunc(obj);
-		var optionClasses = classes(this.props.className, obj.className);
+		var styleProps = this.getComputedStyles().root;
 
 		return obj.disabled ? React.createElement(
 			'div',
-			{ className: optionClasses,
+			{ className: styleProps.className,
+				style: styleProps.style,
 				onMouseDown: this.blockEvent,
 				onClick: this.blockEvent },
 			renderedLabel
 		) : React.createElement(
 			'div',
-			{ className: optionClasses,
-				style: obj.style,
+			{ className: styleProps.className,
+				style: styleProps.style,
 				onMouseEnter: this.props.mouseEnter,
 				onMouseLeave: this.props.mouseLeave,
 				onMouseDown: this.props.mouseDown,
@@ -56,10 +62,31 @@ var Option = React.createClass({
 	}
 });
 
-module.exports = Option;
+module.exports = Seamstress.createDecorator({
+	getStyleState: function getStyleState(_ref) {
+		var props = _ref.props;
+
+		return {
+			focused: props.focused,
+			selected: props.selected,
+			disabled: props.disabled
+		};
+	},
+	styleStateTypes: {
+		focused: React.PropTypes.bool,
+		selected: React.PropTypes.bool,
+		disabled: React.PropTypes.bool
+	},
+	styles: {
+		':base': 'Select-option',
+		':focused': 'is-focused',
+		':selected': 'is-selected',
+		':disabled': 'is-disabled'
+	}
+})(Option);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],2:[function(require,module,exports){
+},{"react-seamstress":undefined}],2:[function(require,module,exports){
 (function (global){
 /* disable some rules until we refactor more completely; fixing them now would
    cause conflicts with some open PRs unnecessarily. */
@@ -71,7 +98,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 var React = (typeof window !== "undefined" ? window['React'] : typeof global !== "undefined" ? global['React'] : null);
 var Input = (typeof window !== "undefined" ? window['AutosizeInput'] : typeof global !== "undefined" ? global['AutosizeInput'] : null);
-var classes = (typeof window !== "undefined" ? window['classNames'] : typeof global !== "undefined" ? global['classNames'] : null);
+var Seamstress = require('react-seamstress');
 var Value = require('./Value');
 var SingleValue = require('./SingleValue');
 var Option = require('./Option');
@@ -756,23 +783,28 @@ var Select = React.createClass({
 			};
 			options.unshift(newOption);
 		}
+
+		var computedStyles = this.getComputedStyles();
+		var styleState = getStyleState(this);
+
 		var ops = Object.keys(options).map(function (key) {
 			var op = options[key];
 			var isSelected = this.state.value === op.value;
 			var isFocused = focusedValue === op.value;
-			var optionClass = classes({
-				'Select-option': true,
-				'is-selected': isSelected,
-				'is-focused': isFocused,
-				'is-disabled': op.disabled
-			});
+
 			var ref = isFocused ? 'focused' : null;
 			var mouseEnter = this.focusOption.bind(this, op);
 			var mouseLeave = this.unfocusOption.bind(this, op);
 			var mouseDown = this.selectValue.bind(this, op);
+
 			var optionResult = React.createElement(this.props.optionComponent, {
 				key: 'option-' + op.value,
-				className: optionClass,
+
+				styles: computedStyles.option.styles.concat(op.styles || [], op.className, op.style),
+				selected: isSelected,
+				focused: isFocused,
+				disabled: op.disabled,
+
 				renderFunc: renderLabel,
 				mouseEnter: mouseEnter,
 				mouseLeave: mouseLeave,
@@ -788,22 +820,19 @@ var Select = React.createClass({
 		if (ops.length) {
 			return ops;
 		} else {
-			var noResultsText, promptClass;
+			var promptText;
 			if (this.state.isLoading) {
-				promptClass = 'Select-searching';
-				noResultsText = this.props.searchingText;
-			} else if (this.state.inputValue || !this.props.asyncOptions) {
-				promptClass = 'Select-noresults';
-				noResultsText = this.props.noResultsText;
+				promptText = this.props.searchingText;
+			} else if (styleState['no-results']) {
+				promptText = this.props.noResultsText;
 			} else {
-				promptClass = 'Select-search-prompt';
-				noResultsText = this.props.searchPromptText;
+				promptText = this.props.searchPromptText;
 			}
 
 			return React.createElement(
 				'div',
-				{ className: promptClass },
-				noResultsText
+				computedStyles.prompt,
+				promptText
 			);
 		}
 	},
@@ -815,15 +844,6 @@ var Select = React.createClass({
 	},
 
 	render: function render() {
-		var selectClass = classes('Select', this.props.className, {
-			'is-multi': this.props.multi,
-			'is-searchable': this.props.searchable,
-			'is-open': this.state.isOpen,
-			'is-focused': this.state.isFocused,
-			'is-loading': this.state.isLoading,
-			'is-disabled': this.props.disabled,
-			'has-value': this.state.value
-		});
 		var value = [];
 		if (this.props.multi) {
 			this.state.values.forEach(function (val) {
@@ -860,17 +880,18 @@ var Select = React.createClass({
 			}
 		}
 
-		var loading = this.state.isLoading ? React.createElement('span', { className: 'Select-loading', 'aria-hidden': 'true' }) : null;
-		var clear = this.props.clearable && this.state.value && !this.props.disabled ? React.createElement('span', { className: 'Select-clear', title: this.props.multi ? this.props.clearAllText : this.props.clearValueText, 'aria-label': this.props.multi ? this.props.clearAllText : this.props.clearValueText, onMouseDown: this.clearValue, onClick: this.clearValue, dangerouslySetInnerHTML: { __html: '&times;' } }) : null;
+		var computedStyles = this.getComputedStyles();
+
+		var loading = this.state.isLoading ? React.createElement('span', _extends({}, computedStyles.loader, { 'aria-hidden': 'true' })) : null;
+		var clear = this.props.clearable && this.state.value && !this.props.disabled ? React.createElement('span', _extends({}, computedStyles.clear, { title: this.props.multi ? this.props.clearAllText : this.props.clearValueText, 'aria-label': this.props.multi ? this.props.clearAllText : this.props.clearValueText, onMouseDown: this.clearValue, onClick: this.clearValue, dangerouslySetInnerHTML: { __html: '&times;' } })) : null;
 
 		var menu;
 		var menuProps;
 		if (this.state.isOpen) {
-			menuProps = {
+			menuProps = _extends({
 				ref: 'menu',
-				className: 'Select-menu',
 				onMouseDown: this.handleMouseDown
-			};
+			}, computedStyles.menu);
 			menu = React.createElement(
 				'div',
 				{ ref: 'selectMenuContainer', className: 'Select-menu-outer' },
@@ -916,33 +937,90 @@ var Select = React.createClass({
 
 		return React.createElement(
 			'div',
-			{ ref: 'wrapper', className: selectClass },
+			_extends({ ref: 'wrapper' }, computedStyles.root),
 			React.createElement('input', { type: 'hidden', ref: 'value', name: this.props.name, value: this.state.value, disabled: this.props.disabled }),
 			React.createElement(
 				'div',
-				{ className: 'Select-control', ref: 'control', onKeyDown: this.handleKeyDown, onMouseDown: this.handleMouseDown, onTouchEnd: this.handleMouseDown },
+				_extends({}, computedStyles.control, { ref: 'control', onKeyDown: this.handleKeyDown, onMouseDown: this.handleMouseDown, onTouchEnd: this.handleMouseDown }),
 				value,
 				input,
-				React.createElement('span', { className: 'Select-arrow-zone', onMouseDown: this.handleMouseDownOnArrow }),
-				React.createElement('span', { className: 'Select-arrow', onMouseDown: this.handleMouseDownOnArrow }),
+				React.createElement('span', _extends({}, computedStyles['arrow-zone'], { onMouseDown: this.handleMouseDownOnArrow })),
+				React.createElement('span', _extends({}, computedStyles.arrow, { onMouseDown: this.handleMouseDownOnArrow })),
 				loading,
 				clear
 			),
 			menu
 		);
 	}
-
 });
 
-module.exports = Select;
+function getStyleState(_ref) {
+	var props = _ref.props;
+	var state = _ref.state;
+
+	return {
+		multi: !!props.multi,
+		searchable: !!props.searchable,
+		open: !!state.isOpen,
+		focused: !!state.isFocused,
+		loading: !!state.isLoading,
+		disabled: !!props.disabled,
+		'has-value': !!state.value,
+		'no-results': !state.isLoading && (state.inputValue || !props.asyncOptions)
+	};
+}
+
+module.exports = Seamstress.createDecorator({
+	getStyleState: getStyleState,
+	subComponentTypes: {
+		option: Seamstress.SubComponentTypes.composite
+	},
+	styleStateTypes: {
+		multi: React.PropTypes.bool.isRequired,
+		searchable: React.PropTypes.bool.isRequired,
+		open: React.PropTypes.bool.isRequired,
+		focused: React.PropTypes.bool.isRequired,
+		loading: React.PropTypes.bool.isRequired,
+		disabled: React.PropTypes.bool.isRequired,
+		'has-value': React.PropTypes.bool.isRequired,
+		'no-results': React.PropTypes.bool.isRequired
+	},
+	styles: {
+		':base': 'Select',
+		':multi': 'is-multi',
+		':searchable': 'is-searchable',
+		':open': 'is-open',
+		':focused': 'is-focused',
+		':loading': 'is-loading',
+		':disabled': 'is-disabled',
+		':has-value': 'has-value',
+
+		'::prompt': 'Select-search-prompt',
+		':loading::prompt': 'Select-searching',
+		':no-results::prompt': 'Select-noresults',
+
+		'::loader': 'Select-loading',
+		'::clear': 'Select-clear',
+		'::menu': 'Select-menu',
+
+		'::control': 'Select-control',
+
+		'::arrow': 'Select-arrow',
+		'::arrow-zone': 'Select-arrow-zone'
+	}
+})(Select);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Option":1,"./SingleValue":3,"./Value":4}],3:[function(require,module,exports){
+},{"./Option":1,"./SingleValue":3,"./Value":4,"react-seamstress":undefined}],3:[function(require,module,exports){
 (function (global){
 'use strict';
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+
 var React = (typeof window !== "undefined" ? window['React'] : typeof global !== "undefined" ? global['React'] : null);
-var classes = (typeof window !== "undefined" ? window['classNames'] : typeof global !== "undefined" ? global['classNames'] : null);
+var Seamstress = require('react-seamstress');
 
 var SingleValue = React.createClass({
 	displayName: 'SingleValue',
@@ -951,30 +1029,48 @@ var SingleValue = React.createClass({
 		placeholder: React.PropTypes.string, // this is default value provided by React-Select based component
 		value: React.PropTypes.object // selected option
 	},
-	render: function render() {
 
-		var classNames = classes('Select-placeholder', this.props.value && this.props.value.className);
+	render: function render() {
 		return React.createElement(
 			'div',
-			{
-				className: classNames,
-				style: this.props.value && this.props.value.style,
+			_extends({}, this.getComputedStyles().root, {
 				title: this.props.value && this.props.value.title
-			},
+			}),
 			this.props.placeholder
 		);
 	}
 });
 
-module.exports = SingleValue;
+module.exports = Seamstress.createDecorator({
+	getStyleState: function getStyleState(_ref) {
+		var props = _ref.props;
+
+		return {
+			value: props.value
+		};
+	},
+	styleStateTypes: {
+		value: React.PropTypes.object
+	},
+	styles: ['Select-placeholder', function (state) {
+		var value = state.value;
+		if (!!value) {
+			return [].concat(_toConsumableArray(value.styles || []), [value.className, value.style]);
+		}
+	}]
+})(SingleValue);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],4:[function(require,module,exports){
+},{"react-seamstress":undefined}],4:[function(require,module,exports){
 (function (global){
 'use strict';
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+
 var React = (typeof window !== "undefined" ? window['React'] : typeof global !== "undefined" ? global['React'] : null);
-var classes = (typeof window !== "undefined" ? window['classNames'] : typeof global !== "undefined" ? global['classNames'] : null);
+var Seamstress = require('react-seamstress');
 
 var Value = React.createClass({
 
@@ -1005,14 +1101,14 @@ var Value = React.createClass({
 			label = this.props.renderer(this.props.option);
 		}
 
+		var computedStyles = this.getComputedStyles();
+
 		if (!this.props.onRemove && !this.props.optionLabelClick) {
 			return React.createElement(
 				'div',
-				{
-					className: classes('Select-value', this.props.option.className),
-					style: this.props.option.style,
+				_extends({}, computedStyles.root, {
 					title: this.props.option.title
-				},
+				}),
 				label
 			);
 		}
@@ -1021,41 +1117,85 @@ var Value = React.createClass({
 
 			label = React.createElement(
 				'a',
-				{ className: classes('Select-item-label__a', this.props.option.className),
+				_extends({}, computedStyles['label-anchor'], {
 					onMouseDown: this.blockEvent,
 					onTouchEnd: this.props.onOptionLabelClick,
 					onClick: this.props.onOptionLabelClick,
-					style: this.props.option.style,
-					title: this.props.option.title },
+					title: this.props.option.title }),
 				label
 			);
 		}
 
 		return React.createElement(
 			'div',
-			{ className: classes('Select-item', this.props.option.className),
-				style: this.props.option.style,
-				title: this.props.option.title },
+			_extends({}, computedStyles.root, {
+				title: this.props.option.title }),
 			React.createElement(
 				'span',
-				{ className: 'Select-item-icon',
+				_extends({}, computedStyles.icon, {
 					onMouseDown: this.blockEvent,
 					onClick: this.handleOnRemove,
-					onTouchEnd: this.handleOnRemove },
+					onTouchEnd: this.handleOnRemove }),
 				'×'
 			),
 			React.createElement(
 				'span',
-				{ className: 'Select-item-label' },
+				computedStyles.label,
 				label
 			)
 		);
 	}
-
 });
 
-module.exports = Value;
+module.exports = Seamstress.createDecorator({
+	getStyleState: function getStyleState(_ref) {
+		var props = _ref.props;
+
+		return {
+			option: props.option,
+			removable: !!props.onRemove,
+			clickable: !!props.optionLabelClick
+		};
+	},
+	styleStateTypes: {
+		option: React.PropTypes.object,
+		removable: React.PropTypes.bool,
+		clickable: React.PropTypes.bool
+	},
+	styles: {
+		':base': function base(state) {
+			//
+			// Here's an interesting special case.
+			//
+			// There's no single unconditional base-class for this component
+			// as it is currently implemented, so I'm using some ugly if/else
+			// logic to achieve the result I want.
+			//
+			// I may want to expand seamstress to allow this kind
+			// of logical composition, so it instead might look like this:
+			// {
+			// 	'not(:clickable,:removable)': 'Select-value',
+			// 	':clickable,:removable': function...,
+			// }
+			//
+			// This would require two new features:
+			// - Logical OR (via `,`)
+			// - Logical NOT (via `not`)
+			//
+			if (!state.clickable && !state.removable) {
+				return 'Select-value';
+			} else {
+				var option = state.option;
+				return ['Select-item', option.className, option.style].concat(_toConsumableArray(option.styles || []));
+			}
+		},
+
+		'::icon': 'Select-item-icon',
+		'::label': 'Select-item-label',
+		'::label-anchor': 'Select-item-label__a'
+	}
+})(Value);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[2])(2)
+},{"react-seamstress":undefined}]},{},[2])(2)
 });

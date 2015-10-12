@@ -1,5 +1,5 @@
 var React = require('react');
-var seamstress = require('react-seamstress');
+var Seamstress = require('react-seamstress');
 
 var SingleValue = React.createClass({
 	propTypes: {
@@ -7,38 +7,36 @@ var SingleValue = React.createClass({
 		value: React.PropTypes.object              // selected option
 	},
 
-	getStyleState: function() {
-		return {
-			value: this.props.value,
-		};
-	},
-
 	render: function() {
 		return (
-			<div {...this.getStyleProps()}
+			<div {...this.getComputedStyles().root}
 				title={this.props.value && this.props.value.title}
 				>{this.props.placeholder}</div>
 		);
 	}
 });
 
-SingleValue.styleStateTypes = {
-	value: React.PropTypes.object,
-};
-
-SingleValue.styles = [
-	'Select-placeholder',
-
-	function(state) {
-		var value = state.value;
-		if (!!value) {
-			return [
-				...(value.styles || []),
-				value.className,
-				value.style
-			];
-		}
+module.exports = Seamstress.createDecorator({
+	getStyleState: function({props}) {
+		return {
+			value: props.value,
+		};
 	},
-];
+	styleStateTypes: {
+		value: React.PropTypes.object,
+	},
+	styles: [
+		'Select-placeholder',
 
-module.exports = seamstress(SingleValue);
+		function(state) {
+			var value = state.value;
+			if (!!value) {
+				return [
+					...(value.styles || []),
+					value.className,
+					value.style
+				];
+			}
+		},
+	],
+})(SingleValue);

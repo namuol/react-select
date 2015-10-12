@@ -1,5 +1,5 @@
 var React = require('react');
-var seamstress = require('react-seamstress');
+var Seamstress = require('react-seamstress');
 
 var Value = React.createClass({
 
@@ -24,25 +24,17 @@ var Value = React.createClass({
 		}
 	},
 
-	getStyleState: function() {
-		return {
-			option: this.props.option,
-			removable: !!this.props.onRemove,
-			clickable: !!this.props.optionLabelClick,
-		};
-	},
-
 	render: function() {
 		var label = this.props.option.label;
 		if (this.props.renderer) {
 			label = this.props.renderer(this.props.option);
 		}
 		
-		var styleProps = this.getStyleProps();
+		var computedStyles = this.getComputedStyles();
 
 		if(!this.props.onRemove && !this.props.optionLabelClick) {
 			return (
-				<div {...styleProps}
+				<div {...computedStyles.root}
 					title={this.props.option.title}
 				>{label}</div>
 			);
@@ -51,7 +43,7 @@ var Value = React.createClass({
 		if (this.props.optionLabelClick) {
 
 			label = (
-				<a {...this.getStylePropsFor('label-anchor')}
+				<a {...computedStyles['label-anchor']}
 					onMouseDown={this.blockEvent}
 					onTouchEnd={this.props.onOptionLabelClick}
 					onClick={this.props.onOptionLabelClick}
@@ -62,25 +54,32 @@ var Value = React.createClass({
 		}
 
 		return (
-			<div {...styleProps}
+			<div {...computedStyles.root}
 				 title={this.props.option.title}>
-				<span {...this.getStylePropsFor('icon')}
+				<span {...computedStyles.icon}
 					onMouseDown={this.blockEvent}
 					onClick={this.handleOnRemove}
 					onTouchEnd={this.handleOnRemove}>&times;</span>
-				<span {...this.getStylePropsFor('label')}>{label}</span>
+				<span {...computedStyles.label}>{label}</span>
 			</div>
 		);
 	}
 });
 
-Value.styleStateTypes = {
-	option: React.PropTypes.object,
-	removable: React.PropTypes.bool,
-	clickable: React.PropTypes.bool,
-};
-
-Value.styles = {
+module.exports = Seamstress.createDecorator({
+	getStyleState: function({props}) {
+		return {
+			option: props.option,
+			removable: !!props.onRemove,
+			clickable: !!props.optionLabelClick,
+		};
+	},
+	styleStateTypes: {
+		option: React.PropTypes.object,
+		removable: React.PropTypes.bool,
+		clickable: React.PropTypes.bool,
+	},
+	styles: {
 	':base': (state) => {
 		//
 		// Here's an interesting special case.
@@ -116,6 +115,5 @@ Value.styles = {
 	'::icon': 'Select-item-icon',
 	'::label': 'Select-item-label',
 	'::label-anchor': 'Select-item-label__a'
-};
-
-module.exports = seamstress(Value);
+}
+})(Value);

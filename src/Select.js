@@ -4,7 +4,7 @@
 
 var React = require('react');
 var Input = require('react-input-autosize');
-var seamstress = require('react-seamstress');
+var Seamstress = require('react-seamstress');
 var Value = require('./Value');
 var SingleValue = require('./SingleValue');
 var Option = require('./Option');
@@ -682,7 +682,8 @@ var Select = React.createClass({
 			options.unshift(newOption);
 		}
 
-		var styleState = this.getStyleState();
+		var computedStyles = this.getComputedStyles();
+		var styleState = getStyleState(this);
 
 		var ops = Object.keys(options).map(function(key) {
 			var op = options[key];
@@ -697,7 +698,7 @@ var Select = React.createClass({
 			var optionResult = React.createElement(this.props.optionComponent, {
 				key: 'option-' + op.value,
 				
-				styles: this.getStylesFor('option').concat(op.styles || [], op.className, op.style),
+				styles: computedStyles.option.styles.concat(op.styles || [], op.className, op.style),
 				selected: isSelected,
 				focused: isFocused,
 				disabled: op.disabled,
@@ -727,7 +728,7 @@ var Select = React.createClass({
 			}
 
 			return (
-				<div {...this.getStylePropsFor('prompt')}>
+				<div {...computedStyles.prompt}>
 					{promptText}
 				</div>
 			);
@@ -738,19 +739,6 @@ var Select = React.createClass({
 		if (this.props.onOptionLabelClick) {
 			this.props.onOptionLabelClick(value, event);
 		}
-	},
-
-	getStyleState: function getStyleState () {
-		return {
-			multi: !!this.props.multi,
-			searchable: !!this.props.searchable,
-			open: !!this.state.isOpen,
-			focused: !!this.state.isFocused,
-			loading: !!this.state.isLoading,
-			disabled: !!this.props.disabled,
-			'has-value': !!this.state.value,
-			'no-results': !this.state.isLoading && (this.state.inputValue || !this.props.asyncOptions),
-		};
 	},
 
 	render: function() {
@@ -790,8 +778,10 @@ var Select = React.createClass({
 			}
 		}
 
-		var loading = this.state.isLoading ? <span {...this.getStylePropsFor('loader')} aria-hidden="true" /> : null;
-		var clear = this.props.clearable && this.state.value && !this.props.disabled ? <span {...this.getStylePropsFor('clear')} title={this.props.multi ? this.props.clearAllText : this.props.clearValueText} aria-label={this.props.multi ? this.props.clearAllText : this.props.clearValueText} onMouseDown={this.clearValue} onClick={this.clearValue} dangerouslySetInnerHTML={{ __html: '&times;' }} /> : null;
+		var computedStyles = this.getComputedStyles();
+
+		var loading = this.state.isLoading ? <span {...computedStyles.loader} aria-hidden="true" /> : null;
+		var clear = this.props.clearable && this.state.value && !this.props.disabled ? <span {...computedStyles.clear} title={this.props.multi ? this.props.clearAllText : this.props.clearValueText} aria-label={this.props.multi ? this.props.clearAllText : this.props.clearValueText} onMouseDown={this.clearValue} onClick={this.clearValue} dangerouslySetInnerHTML={{ __html: '&times;' }} /> : null;
 
 		var menu;
 		var menuProps;
@@ -799,7 +789,7 @@ var Select = React.createClass({
 			menuProps = {
 				ref: 'menu',
 				onMouseDown: this.handleMouseDown,
-				...this.getStylePropsFor('menu'),
+				...computedStyles.menu,
 			};
 			menu = (
 				<div ref="selectMenuContainer" className="Select-menu-outer">
@@ -833,13 +823,13 @@ var Select = React.createClass({
 		}
 
 		return (
-			<div ref="wrapper" {...this.getStyleProps()}>
+			<div ref="wrapper" {...computedStyles.root}>
 				<input type="hidden" ref="value" name={this.props.name} value={this.state.value} disabled={this.props.disabled} />
-				<div {...this.getStylePropsFor('control')} ref="control" onKeyDown={this.handleKeyDown} onMouseDown={this.handleMouseDown} onTouchEnd={this.handleMouseDown}>
+				<div {...computedStyles.control} ref="control" onKeyDown={this.handleKeyDown} onMouseDown={this.handleMouseDown} onTouchEnd={this.handleMouseDown}>
 					{value}
 					{input}
-					<span {...this.getStylePropsFor('arrow-zone')} onMouseDown={this.handleMouseDownOnArrow} />
-					<span {...this.getStylePropsFor('arrow')} onMouseDown={this.handleMouseDownOnArrow} />
+					<span {...computedStyles['arrow-zone']} onMouseDown={this.handleMouseDownOnArrow} />
+					<span {...computedStyles.arrow} onMouseDown={this.handleMouseDownOnArrow} />
 					{loading}
 					{clear}
 				</div>
@@ -849,39 +839,55 @@ var Select = React.createClass({
 	}
 });
 
-Select.styleStateTypes = {
-	multi: React.PropTypes.bool.isRequired,
-	searchable: React.PropTypes.bool.isRequired,
-	open: React.PropTypes.bool.isRequired,
-	focused: React.PropTypes.bool.isRequired,
-	loading: React.PropTypes.bool.isRequired,
-	disabled: React.PropTypes.bool.isRequired,
-	'has-value': React.PropTypes.bool.isRequired,
-	'no-results': React.PropTypes.bool.isRequired,
-};
+function getStyleState ({props, state}) {
+	return {
+		multi: !!props.multi,
+		searchable: !!props.searchable,
+		open: !!state.isOpen,
+		focused: !!state.isFocused,
+		loading: !!state.isLoading,
+		disabled: !!props.disabled,
+		'has-value': !!state.value,
+		'no-results': !state.isLoading && (state.inputValue || !props.asyncOptions),
+	};
+}
 
-Select.styles = {
-	':base': 'Select',
-	':multi': 'is-multi',
-	':searchable': 'is-searchable',
-	':open': 'is-open',
-	':focused': 'is-focused',
-	':loading': 'is-loading',
-	':disabled': 'is-disabled',
-	':has-value': 'has-value',
+module.exports = Seamstress.createDecorator({
+	getStyleState: getStyleState,
+	subComponentTypes: {
+		option: Seamstress.SubComponentTypes.composite,
+	},
+	styleStateTypes: {
+		multi: React.PropTypes.bool.isRequired,
+		searchable: React.PropTypes.bool.isRequired,
+		open: React.PropTypes.bool.isRequired,
+		focused: React.PropTypes.bool.isRequired,
+		loading: React.PropTypes.bool.isRequired,
+		disabled: React.PropTypes.bool.isRequired,
+		'has-value': React.PropTypes.bool.isRequired,
+		'no-results': React.PropTypes.bool.isRequired,
+	},
+	styles: {
+		':base': 'Select',
+		':multi': 'is-multi',
+		':searchable': 'is-searchable',
+		':open': 'is-open',
+		':focused': 'is-focused',
+		':loading': 'is-loading',
+		':disabled': 'is-disabled',
+		':has-value': 'has-value',
 
-	'::prompt': 'Select-search-prompt',
-	':loading::prompt': 'Select-searching',
-	':no-results::prompt': 'Select-noresults',
+		'::prompt': 'Select-search-prompt',
+		':loading::prompt': 'Select-searching',
+		':no-results::prompt': 'Select-noresults',
 
-	'::loader': 'Select-loading',
-	'::clear': 'Select-clear',
-	'::menu': 'Select-menu',
+		'::loader': 'Select-loading',
+		'::clear': 'Select-clear',
+		'::menu': 'Select-menu',
 
-	'::control': 'Select-control',
+		'::control': 'Select-control',
 
-	'::arrow': 'Select-arrow',
-	'::arrow-zone': 'Select-arrow-zone',
-};
-
-module.exports = seamstress(Select);
+		'::arrow': 'Select-arrow',
+		'::arrow-zone': 'Select-arrow-zone',
+	}
+})(Select);

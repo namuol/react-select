@@ -1,5 +1,5 @@
 var React = require('react');
-var seamstress = require('react-seamstress');
+var Seamstress = require('react-seamstress');
 
 var Option = React.createClass({
 	propTypes: {
@@ -15,14 +15,6 @@ var Option = React.createClass({
 		focused: React.PropTypes.bool,
 		selected: React.PropTypes.bool,
 		disabled: React.PropTypes.bool,
-	},
-
-	getStyleState: function getStyleState () {
-		return {
-			focused: this.props.focused,
-			selected: this.props.selected,
-			disabled: this.props.disabled,
-		};
 	},
 
 	blockEvent: function(event) {
@@ -41,7 +33,7 @@ var Option = React.createClass({
 	render: function() {
 		var obj = this.props.option;
 		var renderedLabel = this.props.renderFunc(obj);
-		var styleProps = this.getStyleProps();
+		var styleProps = this.getComputedStyles().root;
 
 		return obj.disabled ? (
 			<div className={styleProps.className}
@@ -64,17 +56,23 @@ var Option = React.createClass({
 	}
 });
 
-Option.styleStateTypes = {
-	focused: React.PropTypes.bool,
-	selected: React.PropTypes.bool,
-	disabled: React.PropTypes.bool,
-};
-
-Option.styles = {
-	':base': 'Select-option',
-	':focused': 'is-focused',
-	':selected': 'is-selected',
-	':disabled': 'is-disabled',
-};
-
-module.exports = seamstress(Option);
+module.exports = Seamstress.createDecorator({
+	getStyleState: function getStyleState ({props}) {
+		return {
+			focused: props.focused,
+			selected: props.selected,
+			disabled: props.disabled,
+		};
+	},
+	styleStateTypes: {
+		focused: React.PropTypes.bool,
+		selected: React.PropTypes.bool,
+		disabled: React.PropTypes.bool,
+	},
+	styles: {
+		':base': 'Select-option',
+		':focused': 'is-focused',
+		':selected': 'is-selected',
+		':disabled': 'is-disabled',
+	}
+})(Option);
