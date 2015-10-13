@@ -74,6 +74,11 @@ module.exports = Seamstress.createDecorator({
 			clickable: !!props.optionLabelClick,
 		};
 	},
+	subComponentTypes: {
+		icon: Seamstress.SubComponentTypes.simple,
+		label: Seamstress.SubComponentTypes.simple,
+		'label-anchor': Seamstress.SubComponentTypes.simple,
+	},
 	styleStateTypes: {
 		option: React.PropTypes.object,
 		removable: React.PropTypes.bool,

@@ -856,6 +856,13 @@ module.exports = Seamstress.createDecorator({
 	getStyleState: getStyleState,
 	subComponentTypes: {
 		option: Seamstress.SubComponentTypes.composite,
+		prompt: Seamstress.SubComponentTypes.simple,
+		loader: Seamstress.SubComponentTypes.simple,
+		clear: Seamstress.SubComponentTypes.simple,
+		menu: Seamstress.SubComponentTypes.simple,
+		control: Seamstress.SubComponentTypes.simple,
+		arrow: Seamstress.SubComponentTypes.simple,
+		'arrow-zone': Seamstress.SubComponentTypes.simple,
 	},
 	styleStateTypes: {
 		multi: React.PropTypes.bool.isRequired,
